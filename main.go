@@ -16,6 +16,7 @@ import (
 	"sync"
 
 	"github.com/joho/godotenv"
+	"github.com/sevlyar/go-daemon"
 	"gopkg.in/yaml.v3"
 )
 
@@ -44,6 +45,15 @@ func usage() {
                                        status
   goreman start [PROCESS]            # Start the application
   goreman version                    # Display Goreman version
+  
+  EX:
+    goreman -f Profile start
+    goreman -daemon -f Profile start
+    goreman run status
+    goreman run stop-all
+
+  Profile:
+    app-name: python3 app.py
 
 Options:
 `)
@@ -98,6 +108,8 @@ var exitOnStop = flag.Bool("exit-on-stop", true, "Exit goreman if all subprocess
 
 // show timestamp in log
 var logTime = flag.Bool("logtime", true, "show timestamp in log")
+
+var daemonFlag = flag.Bool("daemon", false, "run in daemon")
 
 var maxProcNameLength = 0
 
@@ -311,6 +323,26 @@ func main() {
 			usage()
 		}
 	case "start":
+		if *daemonFlag {
+			cntxt := &daemon.Context{
+				PidFileName: "goreman.pid",
+				PidFilePerm: 0644,
+				LogFileName: "goreman.log",
+				LogFilePerm: 0640,
+				WorkDir:     cfg.BaseDir,
+				Umask:       027,
+			}
+
+			child, err := cntxt.Reborn()
+			if err != nil {
+				panic(err)
+			}
+			if child != nil {
+				return
+			}
+			defer cntxt.Release()
+		}
+
 		c := notifyCh()
 		err = start(context.Background(), c, cfg)
 	case "version":
