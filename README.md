@@ -11,6 +11,7 @@ https://github.com/ddollar/foreman
 ## Usage
 
     goreman start
+    goreman --daemon start  # add run in daemon
 
 Will start all commands defined in the `Procfile` and display their outputs.
 Any signals are forwarded to each process.
